@@ -31,7 +31,7 @@ public class DatabaseHelper
             }
         }
     }
-    public static string[] ExecuteElementCreateQuery(NpgsqlConnection connection, int element1Id, int element2Id)
+    public static string[]? ExecuteElementCreateQuery(NpgsqlConnection connection, int element1Id, int element2Id)
     {
         // Ensure the connection is open
         if (connection.State != System.Data.ConnectionState.Open)
@@ -67,7 +67,7 @@ public class DatabaseHelper
                 }
             }
         }
-        return new string[] { "Unknown", "❓", "0" };
+        return null;
     }
 
 }
