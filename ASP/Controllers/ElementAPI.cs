@@ -14,7 +14,10 @@ namespace ASP.Controllers
                 return BadRequest("Both elements must be provided");
             }
 
-            var mergedNames = $"{element1} {element2}";
+            var names = new[] { element1, element2 };
+            var sortedNames = names.OrderBy(n => n).ToArray();
+            var mergedNames = string.Join(" ", sortedNames);
+
             return Json(mergedNames);
         }
     }
