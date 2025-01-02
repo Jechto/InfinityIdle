@@ -57,11 +57,10 @@ namespace ASP.Controllers
                 else
                 {
                     element_ids = new int[] { element_ids[0], element_ids[0] };
-                    count = 2;
                 }   
             }
 
-            string[]? db_element = DatabaseHelper.ExecuteElementCreateQuery(connection, element_ids[0], element_ids[1]);
+            string[]? db_element = DatabaseHelper.CheckMerge(connection, element_ids[0], element_ids[1]);
 
             if (db_element != null)
             {
@@ -87,10 +86,29 @@ namespace ASP.Controllers
                     return StatusCode(500, "AI model failed to generate a valid emoji");
                 }
 
+                // Check if the element already exists in the database, if not, add it
+                var amount_found = DatabaseHelper.GetElementCount(connection, ai_response).Length;
+                if (amount_found == 0)
+                {
+                    //fetch tier of elements and increment by 1
+                    int tier_element_1 = DatabaseHelper.GetElementTierById(connection, element_ids[0]);
+                    int tier_element_2 = DatabaseHelper.GetElementTierById(connection, element_ids[1]);
+
+                    int new_tier = Math.Max(tier_element_1, tier_element_2) + 1;
+
+                    DatabaseHelper.CreateNewElement(connection, ai_response, ai_response_emoji, new_tier); 
+                }
+
+                //TODO: create recipe
+
+                int new_element_id = DatabaseHelper.GetElementId(connection, ai_response);
+                DatabaseHelper.CreateNewRecipe(connection, element_ids[0], element_ids[1], new_element_id);
+
+
                 Dictionary<string, string> response = new Dictionary<string, string>();
                 response["name"] = ai_response;
                 response["emoji"] = ai_response_emoji;
-
+                response["_id"] = new_element_id.ToString();
                 return Json(response);
             }
         }
