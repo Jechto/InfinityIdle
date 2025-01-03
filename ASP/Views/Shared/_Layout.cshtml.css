@@ -23,11 +23,11 @@ a {
   border-color: #1861ac;
 }
 
-.border-top {
-  border-top: 1px solid #e5e5e5;
+.border-top-header {
+    border-top: 1px solid #e5e5e5;
 }
-.border-bottom {
-  border-bottom: 1px solid #e5e5e5;
+.border-bottom-header {
+  border-bottom: 1px solid #5a5a5a !important;
 }
 
 .box-shadow {
@@ -45,4 +45,10 @@ button.accept-policy {
   width: 100%;
   white-space: nowrap;
   line-height: 60px;
+  z-index: 1000;
+  background-color: white
+}
+
+main {
+    height: calc(100vh - 58px);
 }
