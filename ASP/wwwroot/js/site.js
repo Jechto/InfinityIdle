@@ -1,9 +1,23 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿document.addEventListener("DOMContentLoaded", function () {
 
-// Write your JavaScript code.
+    var data = {}
+    const currency = "⛀"
 
-document.addEventListener("DOMContentLoaded", function () {
+    function idToElement(id) {
+        return data["elements"][id]["n"]
+    }
+    function idToPrice(id) {
+        return data["elements"][id]["p"]
+    }
+
+    function setCurrentMoneyOnUi(money, mps) {
+        document.getElementById("money-count").innerHTML = money + currency + "<div>" + mps + currency + " per Second</div>";
+    }
+
+    function buyElement(elementId, ingredients) {
+        console.log("Buying element with id:", elementId, "and ingredients:", ingredients);
+    }
+
 
     function renderElements(elementArray) {
         const elementListDiv = document.getElementById("element_list");
@@ -13,9 +27,24 @@ document.addEventListener("DOMContentLoaded", function () {
             if (elementArray.hasOwnProperty(key)) {
                 const element = elementArray[key];
                 const elementDiv = document.createElement("div");
-                const paddingzero = Math.max(7 - key.toString().length,0)
+                const paddingzero = Math.max(7 - key.toString().length, 0);
+                var buttonHTML = "";
+                var price = 0;
+                for (const recipe of element.r) {
+                    var recipe_format = "";
+                    if (recipe.length == 2) {
+                        recipe_format = idToElement(recipe[0]) + " + " + idToElement(recipe[1]) + "<br>";
+                        price = (idToPrice(recipe[0]) + idToPrice(recipe[1])) * element.t;
+
+                    } else {
+                        recipe_format = "";
+                        price = element.p;
+                    }
+                    buttonHTML += `<button class="btn btn-success element-list-btn" type="button" data-element-id="${key}" data-ingredients='${JSON.stringify(recipe)}'>${recipe_format}${price + currency}</button>`;
+                }
+
                 elementDiv.id = element.n + "-box";
-                elementDiv.className = "element-box accordion-item"
+                elementDiv.className = "element-box accordion-item";
                 elementDiv.innerHTML = `
                     <h2 class="accordion-header">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${element.n}" aria-expanded="false" aria-controls="collapse-${element.n}">
@@ -30,7 +59,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     </h2>
                     <div id="collapse-${element.n}" class="accordion-collapse collapse">
                         <div class="accordion-body">
-                           u clicked kekw
+                            <div class="d-grid gap-2 mx-auto">
+                                ${buttonHTML}
+                            </div>
                         </div>
                     </div>
                 `;
@@ -55,43 +86,93 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    var data = loadInfiniteIdleData();
-
-    if (typeof data["elements"] === "undefined") {
-        data["elements"] = {}
-        data["elements"][1] = {
-            "n": "Fire",
-            "e": "🔥",
-            "t": 1
-        }
-        data["elements"][2] = {
-            "n": "Water",
-            "e": "💧",
-            "t": 1
-        } 
-        data["elements"][3] = {
-            "n": "Plant",
-            "e": "🌱",
-            "t": 1
-        } 
-        data["elements"][4] = {
-            "n": "Electricity",
-            "e": "⚡",
-            "t": 1
-        } 
-        data["elements"][5] = {
-            "n": "Ice",
-            "e": "🧊",
-            "t": 1
-        } 
-        data["elements"][6] = {
-            "n": "Air",
-            "e": "💨",
-            "t": 1
+    function saveInfiniteIdleData() {
+        const dataKey = "infiniteidle-data";
+        try {
+            const serializedData = JSON.stringify(data);
+            localStorage.setItem(dataKey, serializedData);
+            console.log("Data saved successfully.");
+        } catch (e) {
+            console.error("Error serializing data to localStorage:", e);
         }
     }
 
+    data = loadInfiniteIdleData();
+
+    if (typeof data["elements"] === "undefined" || data == {} ) {
+        data["elements"] = {};
+        data["elements"][1] = {
+            "n": "Fire", // Name
+            "e": "🔥", // Emoji
+            "t": 1, // Tier
+            "r": [[]], // Recipe
+            "p": 100 // Price
+        };
+        data["elements"][2] = {
+            "n": "Water",
+            "e": "💧",
+            "t": 1,
+            "r": [[]],
+            "p": 100
+        };
+        data["elements"][3] = {
+            "n": "Plant",
+            "e": "🌱",
+            "t": 1,
+            "r": [[]],
+            "p": 200
+        };
+        data["elements"][4] = {
+            "n": "Electricity",
+            "e": "⚡",
+            "t": 1,
+            "r": [[]],
+            "p": 400
+        };
+        data["elements"][5] = {
+            "n": "Ice",
+            "e": "🧊",
+            "t": 1,
+            "r": [[]],
+            "p": 600
+        };
+        data["elements"][6] = {
+            "n": "Air",
+            "e": "💨",
+            "t": 1,
+            "r": [[]],
+            "p": 800
+        };
+    }
+
+    if (typeof data["resources"] === "undefined") {
+        data["resources"] = {};
+        data["resources"]["money"] = 0
+        data["resources"]["money_per_second"] = 0
+    }
+
+    console.log(data)
     console.log("Loaded data:", data);
 
     renderElements(data["elements"]);
+
+    function mainClock() {
+        data["resources"]["money"] += data["resources"]["money_per_second"];
+        setCurrentMoneyOnUi(data["resources"]["money"], data["resources"]["money_per_second"])
+    }
+    setInterval(mainClock, 100);
+    setInterval(saveInfiniteIdleData, 1000);
+    document.getElementById("playfield").addEventListener("click", function () {
+        console.log("Playfield clicked!");
+        data["resources"]["money"] += 10;
+    });
+
+    const buttons = document.querySelectorAll(".element-list-btn");
+    buttons.forEach(button => {
+        button.addEventListener("click", function () {
+            const elementId = this.getAttribute("data-element-id");
+            const ingredients = JSON.parse(this.getAttribute("data-ingredients"));
+            buyElement(elementId, ingredients);
+        });
+    });
 });

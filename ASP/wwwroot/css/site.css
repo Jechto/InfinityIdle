@@ -18,6 +18,20 @@ body {
   height: 100vh;
 }
 
+#money-count {
+    position: relative;
+    font-size: 24px;
+    top: 10px;
+    left: 10px;
+    font-weight: bold;
+}
+
+#money-count div {
+    position: relative;
+    font-size: 12px;
+    font-weight: lighter;
+}
+
 .element {
     display: block;
     margin: 0 auto;
@@ -60,4 +74,11 @@ body {
 .badge-tier {
     background: #808080;
     margin-left: 0.2rem;
+}
+
+.no-select {
+    user-select: none; /* Standard syntax */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
 }
