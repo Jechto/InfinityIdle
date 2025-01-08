@@ -16,8 +16,31 @@
 
     function buyElement(elementId, ingredients) {
         console.log("Buying element with id:", elementId, "and ingredients:", ingredients);
+        price = data["elements"][elementId]["p"]
+        if (data["resources"]["money"] < price) {
+            return;
+        }
+        data["resources"]["money"] -= price
+
+        element = {
+            "id": elementId, //id
+            "i": ingredients //ingredients
+        }
+
+        data["field"].push(element) // core data can be fetched from "elements"
+
+        console.log(data["elements"][elementId]["p"])
     }
 
+    function calculatePriceForElement(element) {
+        var price = element.p;
+        for (const recipe of element.r) {
+            if (recipe.length != 2)
+                continue
+            price = price + (idToPrice(recipe[0]) + idToPrice(recipe[1])) * element.t;
+        }
+        return price
+    }
 
     function renderElements(elementArray) {
         const elementListDiv = document.getElementById("element_list");
@@ -29,18 +52,15 @@
                 const elementDiv = document.createElement("div");
                 const paddingzero = Math.max(7 - key.toString().length, 0);
                 var buttonHTML = "";
-                var price = 0;
                 for (const recipe of element.r) {
                     var recipe_format = "";
                     if (recipe.length == 2) {
                         recipe_format = idToElement(recipe[0]) + " + " + idToElement(recipe[1]) + "<br>";
-                        price = (idToPrice(recipe[0]) + idToPrice(recipe[1])) * element.t;
-
                     } else {
                         recipe_format = "";
-                        price = element.p;
                     }
-                    buttonHTML += `<button class="btn btn-success element-list-btn" type="button" data-element-id="${key}" data-ingredients='${JSON.stringify(recipe)}'>${recipe_format}${price + currency}</button>`;
+                    var price = calculatePriceForElement(element)
+                    buttonHTML += `<button class="btn btn-success element-list-btn" type="button" data-element-id="${key}" data-ingredients='${JSON.stringify(element.r)}'>${recipe_format}${price + currency}</button>`;
                 }
 
                 elementDiv.id = element.n + "-box";
@@ -91,7 +111,6 @@
         try {
             const serializedData = JSON.stringify(data);
             localStorage.setItem(dataKey, serializedData);
-            console.log("Data saved successfully.");
         } catch (e) {
             console.error("Error serializing data to localStorage:", e);
         }
@@ -101,47 +120,78 @@
 
     if (typeof data["elements"] === "undefined" || data == {} ) {
         data["elements"] = {};
-        data["elements"][1] = {
+        data["elements"][1] = { // if merge contains fire, decrease base production time by 25%
             "n": "Fire", // Name
             "e": "🔥", // Emoji
             "t": 1, // Tier
             "r": [[]], // Recipe
-            "p": 100 // Price
+            "p": 100, // Price (make it a one time thing that unlocks upgrades )
+            "g": 5, // Generate pr cycle
+            "gt": 1, // Generate time in seconds
+            "gu": 1, // Generate pr cycle upgrade count (max level)
+            "gtu": 3, // Generate time in seconds upgrade count (max level)
         };
         data["elements"][2] = {
             "n": "Water",
             "e": "💧",
             "t": 1,
             "r": [[]],
-            "p": 100
+            "p": 100,
+            "g": 25,
+            "gt": 5,
+            "gu": 3,
+            "gtu": 1,
         };
         data["elements"][3] = {
             "n": "Plant",
             "e": "🌱",
             "t": 1,
             "r": [[]],
-            "p": 200
+            "p": 200,
+            "g": 5,
+            "gt": 5,
+            "gu": 4,
+            "gtu": 4,
         };
         data["elements"][4] = {
             "n": "Electricity",
             "e": "⚡",
             "t": 1,
             "r": [[]],
-            "p": 400
+            "p": 400,
+            "g": 10,
+            "gt": 5,
+            "gi": 0.1, // Increase production pr cycle
+            "gu": 2, 
+            "gtu": 2,
+            "giu": 3, // Increase production pr cycle upgrade count (max level)
         };
         data["elements"][5] = {
             "n": "Ice",
             "e": "🧊",
             "t": 1,
             "r": [[]],
-            "p": 600
+            "p": 500,
+            "g": 50,
+            "gt": 2,
+            "go": 25, // Generate pr cycle offline untop of normal
+            "gu": 2,
+            "gtu": 2,
+            "gou": 3, // Generate pr cycle offline untop of normal upgrade count (max level)
+
         };
         data["elements"][6] = {
             "n": "Air",
             "e": "💨",
             "t": 1,
             "r": [[]],
-            "p": 800
+            "p": 600,
+            "g": 5,
+            "gt": 5,
+            "gc": 10, // Generate pr click
+            "gu": 2,
+            "gtu": 2,
+            "gcu": 3, // Generate pr click upgrade count (max level)
         };
     }
 
@@ -150,6 +200,11 @@
         data["resources"]["money"] = 0
         data["resources"]["money_per_second"] = 0
     }
+
+    if (typeof data["field"] === "undefined") {
+        data["field"] = [];
+    }
+
 
     console.log(data)
     console.log("Loaded data:", data);
