@@ -15,21 +15,7 @@
     }
 
     function buyElement(elementId, ingredients) {
-        console.log("Buying element with id:", elementId, "and ingredients:", ingredients);
-        price = data["elements"][elementId]["p"]
-        if (data["resources"]["money"] < price) {
-            return;
-        }
-        data["resources"]["money"] -= price
 
-        element = {
-            "id": elementId, //id
-            "i": ingredients //ingredients
-        }
-
-        data["field"].push(element) // core data can be fetched from "elements"
-
-        console.log(data["elements"][elementId]["p"])
     }
 
     function calculatePriceForElement(element) {
@@ -51,7 +37,7 @@
                 const element = elementArray[key];
                 const elementDiv = document.createElement("div");
                 const paddingzero = Math.max(7 - key.toString().length, 0);
-                var buttonHTML = "";
+                var innerHTML = "";
                 for (const recipe of element.r) {
                     var recipe_format = "";
                     if (recipe.length == 2) {
@@ -60,7 +46,22 @@
                         recipe_format = "";
                     }
                     var price = calculatePriceForElement(element)
-                    buttonHTML += `<button class="btn btn-success element-list-btn" type="button" data-element-id="${key}" data-ingredients='${JSON.stringify(element.r)}'>${recipe_format}${price + currency}</button>`;
+                    innerHTML += `<button class="btn btn-outline-success element-list-btn" type="button" data-element-id="${key}" data-ingredients='${JSON.stringify(element.r)}'>Place ${element.n}</button>`;
+
+                    if (typeof element.g != "undefined") {
+                        level = 0
+                        if (typeof element.gl != "undefined") {
+                            level = gl
+                        }
+                        percent_filled = (level / element.gu) * 100
+                        production = element.g * level
+                        production_ifupgrade = element.g * (level+1)
+                        innerHTML += `<div>${production} ⛀ / cycle </div><div class="progress" role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.gu}"><div class="progress-bar text-bg-warning overflow-visible text-secondary" style="width: ${percent_filled}%">Level: ${level+"/"+element.gu}</div></div>`;
+                        if (level < element.gu) {
+                            innerHTML += `<div><button class="btn btn-primary element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="production">Buy +${element.g} ⛀ / cycle</button> Cost: </div>`;
+                        }
+                    }
+
                 }
 
                 elementDiv.id = element.n + "-box";
@@ -80,7 +81,7 @@
                     <div id="collapse-${element.n}" class="accordion-collapse collapse">
                         <div class="accordion-body">
                             <div class="d-grid gap-2 mx-auto">
-                                ${buttonHTML}
+                                ${innerHTML}
                             </div>
                         </div>
                     </div>
@@ -91,6 +92,8 @@
     }
 
     function loadInfiniteIdleData() {
+        return {}
+
         const dataKey = "infiniteidle-data";
         const storedData = localStorage.getItem(dataKey);
         
