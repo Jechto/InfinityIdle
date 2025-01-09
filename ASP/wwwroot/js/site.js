@@ -211,7 +211,7 @@
             "e": "⚡",
             "t": 1,
             "r": [[]],
-            "p": 400,
+            "p": 200,
             "g": 10,
             "gt": 5,
             "gi": 0.1, // Increase production pr cycle
@@ -224,7 +224,7 @@
             "e": "🧊",
             "t": 1,
             "r": [[]],
-            "p": 500,
+            "p": 300,
             "g": 50,
             "gt": 2,
             "go": 25, // Generate pr cycle offline untop of normal
@@ -238,7 +238,7 @@
             "e": "💨",
             "t": 1,
             "r": [[]],
-            "p": 600,
+            "p": 300,
             "g": 5,
             "gt": 5,
             "gc": 10, // Generate pr click
