@@ -15,7 +15,20 @@
     }
 
     function buyElement(elementId, ingredients) {
+        console.log("Buying element", elementId, ingredients);
+    }
 
+    function buyUpgrade(elementId, upgrade, price) {
+        console.log("Buying upgrade", elementId, upgrade, price);
+        element = data["elements"][elementId]
+        price_int = parseInt(price)
+        if (price_int <= data["resources"]["money"]) {
+            console.log("Upgrade Complete")
+            element.gl += 1
+            console.log(element)
+            data["resources"]["money"] -= price_int
+        }
+        renderElements(data["elements"],elementId)
     }
 
     function calculatePriceForElement(element) {
@@ -28,7 +41,7 @@
         return price
     }
 
-    function renderElements(elementArray) {
+    function renderElements(elementArray, selected_accordion=0) {
         const elementListDiv = document.getElementById("element_list");
         elementListDiv.innerHTML = ""; // Clear any existing content
 
@@ -45,30 +58,49 @@
                     } else {
                         recipe_format = "";
                     }
-                    var price = calculatePriceForElement(element)
+                    //var price = calculatePriceForElement(element)
                     innerHTML += `<button class="btn btn-outline-success element-list-btn" type="button" data-element-id="${key}" data-ingredients='${JSON.stringify(element.r)}'>Place ${element.n}</button>`;
 
-                    if (typeof element.g != "undefined") {
+                    if (typeof element.g != "undefined") { // check if element produces
                         level = 0
-                        if (typeof element.gl != "undefined") {
-                            level = gl
+                        if (typeof element.gl != "undefined") { // check if level is 0
+                            level = element.gl
+                        } else {
+                            element.gl = 0;
                         }
+
                         percent_filled = (level / element.gu) * 100
+
                         production = element.g * level
-                        production_ifupgrade = element.g * (level+1)
-                        innerHTML += `<div>${production} ⛀ / cycle </div><div class="progress" role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.gu}"><div class="progress-bar text-bg-warning overflow-visible text-secondary" style="width: ${percent_filled}%">Level: ${level+"/"+element.gu}</div></div>`;
+                        production_upgrade_cost = element.p * (level + 1)
+
+                        innerHTML += `
+                            <div>${production} ⛀ / cycle </div>
+                            <div class="progress" role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.gu}">
+                                <div class="progress-bar text-bg-warning overflow-visible text-dark" style="width: ${percent_filled}%">
+                                    Level: ${level + "/" + element.gu}
+                                </div>
+                            </div>`;
                         if (level < element.gu) {
-                            innerHTML += `<div><button class="btn btn-primary element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="production">Buy +${element.g} ⛀ / cycle</button> Cost: </div>`;
+                            innerHTML += `
+                            <div>
+                                <button class="btn btn-primary element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="production" data-upgrade-cost=${production_upgrade_cost}>
+                                    Buy +${element.g} ⛀ / cycle
+                                </button> Cost: ${production_upgrade_cost}
+                            </div>`;
                         }
                     }
 
                 }
 
+                const isActive = selected_accordion == key ? "show" : "";
+                const isCollapsed = selected_accordion == key ? "" : "collapsed";
+
                 elementDiv.id = element.n + "-box";
                 elementDiv.className = "element-box accordion-item";
                 elementDiv.innerHTML = `
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${element.n}" aria-expanded="false" aria-controls="collapse-${element.n}">
+                        <button class="accordion-button ${isCollapsed}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${element.n}" aria-expanded="false" aria-controls="collapse-${element.n}">
                             <strong class="element-box-ln1">${element.n} 
                                 <span class="badge badge-tier">T${element.t}</span>
                             </strong>
@@ -78,7 +110,7 @@
                             </div>
                         </button>
                     </h2>
-                    <div id="collapse-${element.n}" class="accordion-collapse collapse">
+                    <div id="collapse-${element.n}" class="accordion-collapse collapse ${isActive}" data-bs-parent="#element_list">
                         <div class="accordion-body">
                             <div class="d-grid gap-2 mx-auto">
                                 ${innerHTML}
@@ -89,6 +121,24 @@
                 elementListDiv.appendChild(elementDiv);
             }
         }
+        const buy_buttons = document.querySelectorAll(".element-list-btn");
+        buy_buttons.forEach(buy_buttons => {
+            buy_buttons.addEventListener("click", function () {
+                const elementId = this.getAttribute("data-element-id");
+                const ingredients = JSON.parse(this.getAttribute("data-ingredients"));
+                buyElement(elementId, ingredients);
+            });
+        });
+
+        const upgrade_buttons = document.querySelectorAll(".element-upgrade-btn");
+        upgrade_buttons.forEach(upgrade_buttons => {
+            upgrade_buttons.addEventListener("click", function () {
+                const elementId = this.getAttribute("data-element-id");
+                const upgrade = this.getAttribute("data-upgrade-type");
+                const price = this.getAttribute("data-upgrade-cost");
+                buyUpgrade(elementId, upgrade, price);
+            });
+        });
     }
 
     function loadInfiniteIdleData() {
@@ -223,14 +273,5 @@
     document.getElementById("playfield").addEventListener("click", function () {
         console.log("Playfield clicked!");
         data["resources"]["money"] += 10;
-    });
-
-    const buttons = document.querySelectorAll(".element-list-btn");
-    buttons.forEach(button => {
-        button.addEventListener("click", function () {
-            const elementId = this.getAttribute("data-element-id");
-            const ingredients = JSON.parse(this.getAttribute("data-ingredients"));
-            buyElement(elementId, ingredients);
-        });
     });
 });
