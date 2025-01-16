@@ -3,19 +3,30 @@
     var data = {}
     const currency = "⛀"
 
-    function idToElement(id) {
+    function idToElementName(id) {
         return data["elements"][id]["n"]
     }
-    function idToPrice(id) {
-        return data["elements"][id]["p"]
+
+    function idToElementObject(id) {
+        return data["elements"][id]
     }
+
 
     function setCurrentMoneyOnUi(money, mps) {
         document.getElementById("money-count").innerHTML = money + currency + "<div>" + mps + currency + " per Second</div>";
     }
 
-    function buyElement(elementId, ingredients) {
+
+    // I need to think if it just makes more sense to prebake the best recipe for each element
+    function placeElement(elementId, ingredients) {
         console.log("Buying element", elementId, ingredients);
+        const js = {
+            element: idToElementObject(elementId),
+            position: { x: Math.random() * 85, y: Math.random() * 75 },
+            production_progress: 0,
+        };
+        data["field"].push(js);
+        renderField(data["field"])
     }
 
     function buyUpgrade(elementId, upgrade, price) {
@@ -46,16 +57,6 @@
         renderElements(data["elements"],elementId)
     }
 
-    function calculatePriceForElement(element) {
-        var price = element.p;
-        for (const recipe of element.r) {
-            if (recipe.length != 2)
-                continue
-            price = price + (idToPrice(recipe[0]) + idToPrice(recipe[1])) * element.t;
-        }
-        return price
-    }
-
     function renderElements(elementArray, selected_accordion=0) {
         const elementListDiv = document.getElementById("element_list");
         elementListDiv.innerHTML = ""; // Clear any existing content
@@ -69,12 +70,12 @@
                 for (const recipe of element.r) {
                     var recipe_format = "";
                     if (recipe.length == 2) {
-                        recipe_format = idToElement(recipe[0]) + " + " + idToElement(recipe[1]) + "<br>";
+                        recipe_format = idToElementName(recipe[0]) + " + " + idToElementName(recipe[1]) + "<br>";
                     } else {
                         recipe_format = "";
                     }
                     //var price = calculatePriceForElement(element)
-                    innerHTML += `<button class="btn btn-outline-success element-list-btn" type="button" data-element-id="${key}" data-ingredients='${JSON.stringify(element.r)}'>Place ${element.n}</button>`;
+                    innerHTML += `<button class="btn btn-outline-success element-list-btn" type="button" data-element-id="${key}" data-ingredients='${JSON.stringify(element.r[0])}'>Place ${element.n}</button>`;
 
                     if (typeof element.g != "undefined") { // check if element produces
                         level = 0
@@ -262,7 +263,7 @@
             buy_buttons.addEventListener("click", function () {
                 const elementId = this.getAttribute("data-element-id");
                 const ingredients = JSON.parse(this.getAttribute("data-ingredients"));
-                buyElement(elementId, ingredients);
+                placeElement(elementId, ingredients);
             });
         });
 
@@ -275,6 +276,25 @@
                 buyUpgrade(elementId, upgrade, price);
             });
         });
+    }
+
+    function renderField(fieldArray) {
+        var innerHTML = `<div id="money-count" class="no-select">This is Money<div>Per Second</div></div>`;
+        for (const key in fieldArray) {
+
+            percent_filled = fieldArray[key]["production_progress"] / fieldArray[key]["element"]["gt"] * 100
+
+            innerHTML = innerHTML + `
+            <div class="field_element" style="top: ${fieldArray[key]["position"]["x"]}%;left: ${fieldArray[key]["position"]["y"]}%">
+                <strong>${fieldArray[key]["element"]["n"] + fieldArray[key]["element"]["e"]}</strong><span class="badge badge-tier">T${fieldArray[key]["element"]["t"]}</span>
+                <div class="progress production-bar" role="progressbar" aria-label="Animated striped example" aria-valuemin="0" aria-valuemax="${fieldArray[key]["element"]["gt"]}">
+                    <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" style="width: ${percent_filled}%"></div>
+                </div>
+                <div class="progress-bar-timer">${Math.floor((fieldArray[key]["element"]["gt"] - fieldArray[key]["production_progress"])*10)/10 } sec</div>
+
+            </div>`
+        }
+        document.getElementById("playfield").innerHTML = innerHTML;
     }
 
     function loadInfiniteIdleData() {
@@ -399,9 +419,18 @@
     console.log("Loaded data:", data);
 
     renderElements(data["elements"]);
+    renderField(data["field"]);
 
     function mainClock() {
         data["resources"]["money"] += data["resources"]["money_per_second"];
+        for (const key in data["field"]) {
+            data["field"][key]["production_progress"] += 0.1;
+            if (data["field"][key]["production_progress"] >= data["field"][key]["element"]["gt"]) {
+                data["field"][key]["production_progress"] = 0;
+            }
+        }
+
+        renderField(data["field"])
         setCurrentMoneyOnUi(data["resources"]["money"], data["resources"]["money_per_second"])
     }
     setInterval(mainClock, 100);

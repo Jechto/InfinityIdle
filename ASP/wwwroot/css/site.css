@@ -82,3 +82,26 @@ body {
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* Internet Explorer/Edge */
 }
+
+.field_element {
+    box-shadow: 0.25rem 0 .75rem rgba(0, 0, 0, .5);
+    width: 200px;
+    height: 100px;
+    border-radius: 5px;
+    border-color: #ff6a00;
+    border-width: 2px;
+    position: absolute;
+    background-color: white;
+    z-index: -1;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.production-bar {
+    height: 10px;
+    margin-top: 5px;
+}
+.progress-bar-timer {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 15px;
+}
