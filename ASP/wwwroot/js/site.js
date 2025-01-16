@@ -13,7 +13,7 @@
 
 
     function setCurrentMoneyOnUi(money, mps) {
-        document.getElementById("money-count").innerHTML = money + currency + "<div>" + mps + currency + " per Second</div>";
+        document.getElementById("money-count").innerHTML = Math.round(money) + currency + "<div>" + mps + currency + " per Second</div>";
     }
 
 
@@ -24,6 +24,7 @@
             element: idToElementObject(elementId),
             position: { x: Math.random() * 85, y: Math.random() * 75 },
             production_progress: 0,
+            electric_bonus: 0,
         };
         data["field"].push(js);
         renderField(data["field"])
@@ -427,8 +428,14 @@
             data["field"][key]["production_progress"] += 0.1;
             if (data["field"][key]["production_progress"] >= data["field"][key]["element"]["gt"]) {
                 data["field"][key]["production_progress"] = 0;
+                if (typeof data["field"][key]["element"]["gi"] != "undefined") {
+                    data["field"][key]["electric_bonus"] += data["field"][key]["element"]["gi"] * data["field"][key]["element"]["gil"];
+                }
+
+                data["resources"]["money"] += data["field"][key]["element"]["g"] * data["field"][key]["element"]["gl"] + data["field"][key]["electric_bonus"];
             }
         }
+        console.log(data["field"])
 
         renderField(data["field"])
         setCurrentMoneyOnUi(data["resources"]["money"], data["resources"]["money_per_second"])
