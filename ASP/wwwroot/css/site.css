@@ -24,6 +24,7 @@ body {
     top: 10px;
     left: 10px;
     font-weight: bold;
+    z-index: 3;
 }
 
 #money-count div {
@@ -92,9 +93,10 @@ body {
     border-width: 2px;
     position: absolute;
     background-color: white;
-    z-index: -1;
     padding-left: 5px;
     padding-right: 5px;
+    pointer-events: auto;
+    z-index: 10;
 }
 
 .production-bar {
@@ -104,4 +106,11 @@ body {
 .progress-bar-timer {
     font-family: "Courier New", Courier, monospace;
     font-size: 15px;
+}
+
+
+
+
+#playfield {
+    pointer-events: auto;
 }

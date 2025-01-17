@@ -27,7 +27,7 @@
             electric_bonus: 0,
         };
         data["field"].push(js);
-        renderField(data["field"])
+        fullrenderField(data["field"])
     }
 
     function buyUpgrade(elementId, upgrade, price) {
@@ -55,7 +55,8 @@
             console.log(element)
             data["resources"]["money"] -= price_int
         }
-        renderElements(data["elements"],elementId)
+        renderElements(data["elements"], elementId)
+        fullrenderField(data["field"]);
     }
 
     function renderElements(elementArray, selected_accordion=0) {
@@ -118,8 +119,8 @@
 
                         percent_filled = (level / element.gtu) * 100
 
-                        production_time = element.gt * Math.pow(0.8, level)
-                        production_time_decrease = element.gt * Math.pow(0.8, level + 1) - production_time
+                        production_time = element.gt * Math.pow(0.9, level)
+                        production_time_decrease = element.gt * Math.pow(0.9, level + 1) - production_time
                         production_time_upgrade_cost = element.p * (level + 1)
 
                         innerHTML += `
@@ -279,24 +280,41 @@
         });
     }
 
-    function renderField(fieldArray) {
+    function fullrenderField(fieldArray) {
         var innerHTML = `<div id="money-count" class="no-select">This is Money<div>Per Second</div></div>`;
         for (const key in fieldArray) {
+            percent_filled = fieldArray[key]["production_progress"] / (fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"])) * 100
 
-            percent_filled = fieldArray[key]["production_progress"] / fieldArray[key]["element"]["gt"] * 100
-
-            innerHTML = innerHTML + `
-            <div class="field_element" style="top: ${fieldArray[key]["position"]["x"]}%;left: ${fieldArray[key]["position"]["y"]}%">
+            innerHTML += `
+            <div class="field_element" style="top: ${fieldArray[key]["position"]["x"]}%;left: ${fieldArray[key]["position"]["y"]}%" data-key="${key}">
                 <strong>${fieldArray[key]["element"]["n"] + fieldArray[key]["element"]["e"]}</strong><span class="badge badge-tier">T${fieldArray[key]["element"]["t"]}</span>
-                <div class="progress production-bar" role="progressbar" aria-label="Animated striped example" aria-valuemin="0" aria-valuemax="${fieldArray[key]["element"]["gt"]}">
+                <div class="progress production-bar" role="progressbar" aria-label="Animated striped example" aria-valuemin="0" aria-valuemax="${fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"])}">
                     <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" style="width: ${percent_filled}%"></div>
                 </div>
-                <div class="progress-bar-timer">${Math.floor((fieldArray[key]["element"]["gt"] - fieldArray[key]["production_progress"])*10)/10 } sec</div>
-
-            </div>`
+                <div class="progress-bar-timer">${Math.floor((fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"]) - fieldArray[key]["production_progress"]) * 10) / 10} sec</div>
+            </div>`;
         }
+
         document.getElementById("playfield").innerHTML = innerHTML;
     }
+
+    function renderField(fieldArray) {
+        for (const key in fieldArray) {
+            const percentFilled = fieldArray[key]["production_progress"] / (fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"])) * 100;
+            const fieldElement = document.querySelector(`.field_element[data-key="${key}"]`);
+
+            if (fieldElement) {
+                const progressBar = fieldElement.querySelector(".progress-bar");
+                const progressBarTimer = fieldElement.querySelector(".progress-bar-timer");
+
+                progressBar.style.transition = 'width 0.1s linear';
+                progressBar.style.width = `${percentFilled}%`;
+                progressBarTimer.textContent = `${Math.floor((fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"]) - fieldArray[key]["production_progress"]) * 10) / 10} sec`;
+            }
+        }
+    }
+
+
 
     function loadInfiniteIdleData() {
         return {}
@@ -420,30 +438,47 @@
     console.log("Loaded data:", data);
 
     renderElements(data["elements"]);
-    renderField(data["field"]);
+    fullrenderField(data["field"]);
 
     function mainClock() {
         data["resources"]["money"] += data["resources"]["money_per_second"];
         for (const key in data["field"]) {
             data["field"][key]["production_progress"] += 0.1;
-            if (data["field"][key]["production_progress"] >= data["field"][key]["element"]["gt"]) {
+            if (data["field"][key]["production_progress"] >= data["field"][key]["element"]["gt"] * Math.pow(0.85, data["field"][key]["element"]["gtl"])) {
                 data["field"][key]["production_progress"] = 0;
                 if (typeof data["field"][key]["element"]["gi"] != "undefined") {
                     data["field"][key]["electric_bonus"] += data["field"][key]["element"]["gi"] * data["field"][key]["element"]["gil"];
+                }
+                if (typeof data["field"][key]["element"]["go"] != "undefined") {
+                    data["resources"]["money"] += data["field"][key]["element"]["gol"] * data["field"][key]["element"]["go"]; // TODO: make this tick offline
                 }
 
                 data["resources"]["money"] += data["field"][key]["element"]["g"] * data["field"][key]["element"]["gl"] + data["field"][key]["electric_bonus"];
             }
         }
-        console.log(data["field"])
 
         renderField(data["field"])
         setCurrentMoneyOnUi(data["resources"]["money"], data["resources"]["money_per_second"])
     }
     setInterval(mainClock, 100);
     setInterval(saveInfiniteIdleData, 1000);
-    document.getElementById("playfield").addEventListener("click", function () {
+    document.getElementById("playfield").addEventListener("click", function (event) {
         console.log("Playfield clicked!");
         data["resources"]["money"] += 10;
+        for (const key in data["field"]) {
+            if (typeof data["field"][key]["element"]["gc"] != "undefined") {
+                data["resources"]["money"] += data["field"][key]["element"]["gcl"] * data["field"][key]["element"]["gc"];
+            }
+        }
+
+        const fieldElement = event.target.closest(".field_element");
+        if (fieldElement) {
+            const dataKey = fieldElement.getAttribute("data-key");
+            console.log("Field element clicked:", dataKey);
+            // Add additional logic here to handle the click event
+        }
+
     });
+
+
 });
