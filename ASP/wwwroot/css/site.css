@@ -108,7 +108,9 @@ body {
     font-size: 15px;
 }
 
-
+.field_selected {
+    z-index: 20;
+}
 
 
 #playfield {

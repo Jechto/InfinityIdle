@@ -2,6 +2,8 @@
 
     var data = {}
     const currency = "⛀"
+    const playfield = document.getElementById("playfield");
+    var mousepos = {x: 0, y: 0}
 
     function idToElementName(id) {
         return data["elements"][id]["n"]
@@ -25,6 +27,7 @@
             position: { x: Math.random() * 85, y: Math.random() * 75 },
             production_progress: 0,
             electric_bonus: 0,
+            selected: false,
         };
         data["field"].push(js);
         fullrenderField(data["field"])
@@ -286,7 +289,7 @@
             percent_filled = fieldArray[key]["production_progress"] / (fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"])) * 100
 
             innerHTML += `
-            <div class="field_element" style="top: ${fieldArray[key]["position"]["x"]}%;left: ${fieldArray[key]["position"]["y"]}%" data-key="${key}">
+            <div class="field_element" style="left: ${fieldArray[key]["position"]["x"]}%;top: ${fieldArray[key]["position"]["y"]}%" data-key="${key}">
                 <strong>${fieldArray[key]["element"]["n"] + fieldArray[key]["element"]["e"]}</strong><span class="badge badge-tier">T${fieldArray[key]["element"]["t"]}</span>
                 <div class="progress production-bar" role="progressbar" aria-label="Animated striped example" aria-valuemin="0" aria-valuemax="${fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"])}">
                     <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" style="width: ${percent_filled}%"></div>
@@ -295,7 +298,7 @@
             </div>`;
         }
 
-        document.getElementById("playfield").innerHTML = innerHTML;
+        playfield.innerHTML = innerHTML;
     }
 
     function renderField(fieldArray) {
@@ -314,7 +317,21 @@
         }
     }
 
+    function updateFieldElementPositions(fieldArray) {
+        for (const key in fieldArray) {
+            const fieldElement = document.querySelector(`.field_element[data-key="${key}"]`);
+            if (fieldElement) {
+                fieldElement.style.left = `${fieldArray[key]["position"]["x"]}%`;
+                fieldElement.style.top = `${fieldArray[key]["position"]["y"]}%`;
 
+                if (fieldArray[key]["selected"]) {
+                    fieldElement.classList.add("field_selected");
+                } else {
+                    fieldElement.classList.remove("field_selected");
+                }
+            }
+        }
+    }
 
     function loadInfiniteIdleData() {
         return {}
@@ -440,10 +457,12 @@
     renderElements(data["elements"]);
     fullrenderField(data["field"]);
 
-    function mainClock() {
+    function mainClock() { // 30 ticks per second
         data["resources"]["money"] += data["resources"]["money_per_second"];
         for (const key in data["field"]) {
-            data["field"][key]["production_progress"] += 0.1;
+            data["field"][key]["production_progress"] += 1/60;
+
+            // Perform logic when production complete
             if (data["field"][key]["production_progress"] >= data["field"][key]["element"]["gt"] * Math.pow(0.85, data["field"][key]["element"]["gtl"])) {
                 data["field"][key]["production_progress"] = 0;
                 if (typeof data["field"][key]["element"]["gi"] != "undefined") {
@@ -455,14 +474,33 @@
 
                 data["resources"]["money"] += data["field"][key]["element"]["g"] * data["field"][key]["element"]["gl"] + data["field"][key]["electric_bonus"];
             }
-        }
 
+            if (data["field"][key]["selected"]) {
+                data["field"][key]["position"]["x"] = mousepos.x - 10
+                data["field"][key]["position"]["y"] = mousepos.y - 5
+
+                if (data["field"][key]["position"]["x"] >= 90) { // delete element if outside of playfield
+                    data["field"].splice(key, 1); // Remove element by key
+                    fullrenderField(data["field"]);
+                    return;
+                }
+            }
+
+        }
+    }
+
+    function renderClock() {
+        updateFieldElementPositions(data["field"])
         renderField(data["field"])
         setCurrentMoneyOnUi(data["resources"]["money"], data["resources"]["money_per_second"])
     }
-    setInterval(mainClock, 100);
+
+    setInterval(mainClock, 1000/60);
+    setInterval(renderClock, 1000/60);
     setInterval(saveInfiniteIdleData, 1000);
-    document.getElementById("playfield").addEventListener("click", function (event) {
+
+
+    playfield.addEventListener("click", function (event) {
         console.log("Playfield clicked!");
         data["resources"]["money"] += 10;
         for (const key in data["field"]) {
@@ -475,10 +513,34 @@
         if (fieldElement) {
             const dataKey = fieldElement.getAttribute("data-key");
             console.log("Field element clicked:", dataKey);
-            // Add additional logic here to handle the click event
+            data["field"][dataKey]["selected"] = !data["field"][dataKey]["selected"]
+            console.log("Selected:", data["field"][dataKey]["selected"])
         }
 
     });
 
+    playfield.addEventListener('mousemove', function (event) {
+        const rect = playfield.getBoundingClientRect();
+
+        mousepos.x = (event.clientX - rect.left) / rect.width * 100;
+        mousepos.y = (event.clientY - rect.top) / rect.height * 100;
+
+    });
+
+    playfield.addEventListener('mouseleave', function (event) {
+        const rect = playfield.getBoundingClientRect();
+
+        if (event.clientX < rect.left) {
+            mousepos.x = 0;
+        } else if (event.clientX > rect.right) {
+            mousepos.x = 100;
+        }
+
+        if (event.clientY < rect.top) {
+            mousepos.y = 0;
+        } else if (event.clientY > rect.bottom) {
+            mousepos.y = 100;
+        }
+    });
 
 });
