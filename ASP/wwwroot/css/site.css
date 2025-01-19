@@ -106,6 +106,17 @@ body {
 .progress-bar-timer {
     font-family: "Courier New", Courier, monospace;
     font-size: 15px;
+    display: inline-block;
+    width: 50%;
+}
+
+.progress-bar-production {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 15px;
+    text-anchor: end;
+    text-align: right;
+    display: inline-block;
+    width: 45%;
 }
 
 .field_selected {

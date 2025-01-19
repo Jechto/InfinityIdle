@@ -288,13 +288,20 @@
         for (const key in fieldArray) {
             percent_filled = fieldArray[key]["production_progress"] / (fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"])) * 100
 
+
+            //console.log(fieldArray[key]["electric_bonus"])
+
             innerHTML += `
             <div class="field_element" style="left: ${fieldArray[key]["position"]["x"]}%;top: ${fieldArray[key]["position"]["y"]}%" data-key="${key}">
                 <strong>${fieldArray[key]["element"]["n"] + fieldArray[key]["element"]["e"]}</strong><span class="badge badge-tier">T${fieldArray[key]["element"]["t"]}</span>
                 <div class="progress production-bar" role="progressbar" aria-label="Animated striped example" aria-valuemin="0" aria-valuemax="${fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"])}">
                     <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" style="width: ${percent_filled}%"></div>
                 </div>
-                <div class="progress-bar-timer">${Math.floor((fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"]) - fieldArray[key]["production_progress"]) * 10) / 10} sec</div>
+                <div>
+                    <span class="progress-bar-timer"></span>
+                    <span class="progress-bar-production"></span>
+                </div>
+
             </div>`;
         }
 
@@ -306,13 +313,25 @@
             const percentFilled = fieldArray[key]["production_progress"] / (fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"])) * 100;
             const fieldElement = document.querySelector(`.field_element[data-key="${key}"]`);
 
+
+            var production = fieldArray[key]["element"]["g"] * fieldArray[key]["element"]["gl"]
+
+            if (typeof fieldArray[key]["element"]["go"] != "undefined") {
+                production += fieldArray[key]["element"]["go"] * fieldArray[key]["element"]["gol"]
+            }
+            if (typeof fieldArray[key]["element"]["gi"] != "undefined") {
+                production += fieldArray[key]["electric_bonus"]
+            }
+
             if (fieldElement) {
                 const progressBar = fieldElement.querySelector(".progress-bar");
                 const progressBarTimer = fieldElement.querySelector(".progress-bar-timer");
+                const progressBarProduction = fieldElement.querySelector(".progress-bar-production");
 
                 progressBar.style.transition = 'width 0.1s linear';
                 progressBar.style.width = `${percentFilled}%`;
-                progressBarTimer.textContent = `${Math.floor((fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"]) - fieldArray[key]["production_progress"]) * 10) / 10} sec`;
+                progressBarTimer.textContent = `${Math.round((fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"]) - fieldArray[key]["production_progress"]) * 10) / 10}s`;
+                progressBarProduction.textContent = `${Math.round(production * 100) / 100} ${currency}`;
             }
         }
     }
