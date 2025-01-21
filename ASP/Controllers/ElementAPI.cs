@@ -87,6 +87,7 @@ namespace ASP.Controllers
                 response["name"] = db_element[0];
                 response["emoji"] = db_element[1];
                 response["_id"] = db_element[2];
+                response["tier"] = db_element[3];
 
                 return Json(response);
             }
@@ -102,6 +103,8 @@ namespace ASP.Controllers
                 string ai_response_emoji = await _aiClient.QueryAsync(system_prompt_emoji, $"'{ai_response}'");
 
                 int emoji = char.ConvertToUtf32(ai_response_emoji.ToString(), 0);
+                
+
                 if (!(emoji >= 0x2000 && emoji <= 0x10FFFF))
                 {
                     return StatusCode(500, "AI model failed to generate a valid emoji");
@@ -109,26 +112,30 @@ namespace ASP.Controllers
 
                 // Check if the element already exists in the database, if not, add it
                 var amount_found = DatabaseHelper.GetElementCount(connectionString, ai_response).Length;
+
+                int new_tier = 0;
+                int new_element_id = 0;
                 if (amount_found == 0)
                 {
                     //fetch tier of elements and increment by 1
                     int tier_element_1 = DatabaseHelper.GetElementTierById(connectionString, element_ids[0]);
                     int tier_element_2 = DatabaseHelper.GetElementTierById(connectionString, element_ids[1]);
 
-                    int new_tier = Math.Max(tier_element_1, tier_element_2) + 1;
+                    new_tier = Math.Max(tier_element_1, tier_element_2) + 1;
 
                     DatabaseHelper.CreateNewElement(connectionString, ai_response, ai_response_emoji, new_tier);
+                } else {
+                    new_tier = DatabaseHelper.GetElementTierById(connectionString, new_element_id);
                 }
 
-                //TODO: create recipe
-
-                int new_element_id = DatabaseHelper.GetElementId(connectionString, ai_response);
+                new_element_id = DatabaseHelper.GetElementId(connectionString, ai_response);
                 DatabaseHelper.CreateNewRecipe(connectionString, element_ids[0], element_ids[1], new_element_id);
 
                 Dictionary<string, string> response = new Dictionary<string, string>();
                 response["name"] = ai_response;
                 response["emoji"] = ai_response_emoji;
                 response["_id"] = new_element_id.ToString();
+                response["tier"] = new_tier.ToString();
                 return Json(response);
             }
         }

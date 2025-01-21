@@ -40,7 +40,7 @@ public class DatabaseHelper
             connection.Open();
 
             var query = @"
-                SELECT element_create_id, note, element_name, emoji, element_id
+                SELECT element_create_id, note, element_name, emoji, element_id, tier
                 FROM public.recipes
                 INNER JOIN elements ON elements.element_id = recipes.element_create_id
                 WHERE element_1_id = @element1Id AND element_2_id = @element2Id";
@@ -57,8 +57,9 @@ public class DatabaseHelper
                         var elementName = reader.GetString(reader.GetOrdinal("element_name"));
                         var emoji = reader.GetString(reader.GetOrdinal("emoji"));
                         var elementId = reader.GetInt32(reader.GetOrdinal("element_id"));
+                        var tier = reader.GetInt32(reader.GetOrdinal("tier"));
 
-                        return new string[] { elementName, emoji, elementId.ToString() };
+                        return new string[] { elementName, emoji, elementId.ToString(), tier.ToString() };
                     }
                 }
             }

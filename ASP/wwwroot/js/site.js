@@ -72,167 +72,158 @@
                 const elementDiv = document.createElement("div");
                 const paddingzero = Math.max(7 - key.toString().length, 0);
                 var innerHTML = "";
-                for (const recipe of element.r) {
-                    var recipe_format = "";
-                    if (recipe.length == 2) {
-                        recipe_format = idToElementName(recipe[0]) + " + " + idToElementName(recipe[1]) + "<br>";
+
+                innerHTML += `<button class="btn btn-outline-success element-list-btn" type="button" data-element-id="${key}" data-ingredients='${JSON.stringify(element.r[0])}'>Place ${element.n}</button>`;
+
+                if (typeof element.g != "undefined") { // check if element produces
+                    level = 0
+                    if (typeof element.gl != "undefined") { // check if level is 0
+                        level = element.gl
                     } else {
-                        recipe_format = "";
+                        element.gl = 0;
                     }
-                    //var price = calculatePriceForElement(element)
-                    innerHTML += `<button class="btn btn-outline-success element-list-btn" type="button" data-element-id="${key}" data-ingredients='${JSON.stringify(element.r[0])}'>Place ${element.n}</button>`;
 
-                    if (typeof element.g != "undefined") { // check if element produces
-                        level = 0
-                        if (typeof element.gl != "undefined") { // check if level is 0
-                            level = element.gl
-                        } else {
-                            element.gl = 0;
-                        }
+                    percent_filled = (level / element.gu) * 100
 
-                        percent_filled = (level / element.gu) * 100
+                    production = element.g * level
+                    production_upgrade_cost = element.p * (level + 1)
 
-                        production = element.g * level
-                        production_upgrade_cost = element.p * (level + 1)
-
+                    innerHTML += `
+                        <div>${production} ⛀ / cycle </div>
+                        <div class="progress" role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.gu}">
+                            <div class="progress-bar text-bg-warning overflow-visible text-dark" style="width: ${percent_filled}%">
+                                Level: ${level + "/" + element.gu}
+                            </div>
+                        </div>`;
+                    if (level < element.gu) {
                         innerHTML += `
-                            <div>${production} ⛀ / cycle </div>
-                            <div class="progress" role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.gu}">
-                                <div class="progress-bar text-bg-warning overflow-visible text-dark" style="width: ${percent_filled}%">
-                                    Level: ${level + "/" + element.gu}
-                                </div>
-                            </div>`;
-                        if (level < element.gu) {
-                            innerHTML += `
-                            <div>
-                                <button class="btn btn-primary element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="production" data-upgrade-cost=${production_upgrade_cost}>
-                                    Buy +${element.g} ⛀ / cycle
-                                </button> Cost: ${production_upgrade_cost}
-                            </div>`;
-                        }
+                        <div>
+                            <button class="btn btn-primary element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="production" data-upgrade-cost=${production_upgrade_cost}>
+                                Buy +${element.g} ⛀ / cycle
+                            </button> Cost: ${production_upgrade_cost}
+                        </div>`;
+                    }
+                }
+
+                if (typeof element.gt != "undefined") { // check if element produces
+                    level = 0
+                    if (typeof element.gtl != "undefined") { // check if level is 0
+                        level = element.gtl
+                    } else {
+                        element.gtl = 0;
                     }
 
-                    if (typeof element.gt != "undefined") { // check if element produces
-                        level = 0
-                        if (typeof element.gtl != "undefined") { // check if level is 0
-                            level = element.gtl
-                        } else {
-                            element.gtl = 0;
-                        }
+                    percent_filled = (level / element.gtu) * 100
 
-                        percent_filled = (level / element.gtu) * 100
+                    production_time = element.gt * Math.pow(0.9, level)
+                    production_time_decrease = element.gt * Math.pow(0.9, level + 1) - production_time
+                    production_time_upgrade_cost = element.p * (level + 1)
 
-                        production_time = element.gt * Math.pow(0.9, level)
-                        production_time_decrease = element.gt * Math.pow(0.9, level + 1) - production_time
-                        production_time_upgrade_cost = element.p * (level + 1)
-
+                    innerHTML += `
+                        <div>${Math.floor(production_time*100)/100} Sec / cycle</div>
+                        <div class="progress " role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.gtu}">
+                            <div class="progress-bar text-bg-warning bg-danger overflow-visible text-dark" style="width: ${percent_filled}%">
+                                Level: ${level + "/" + element.gtu}
+                            </div>
+                        </div>`;
+                    if (level < element.gtu) {
                         innerHTML += `
-                            <div>${Math.floor(production_time*100)/100} Sec / cycle</div>
-                            <div class="progress " role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.gtu}">
-                                <div class="progress-bar text-bg-warning bg-danger overflow-visible text-dark" style="width: ${percent_filled}%">
-                                    Level: ${level + "/" + element.gtu}
-                                </div>
-                            </div>`;
-                        if (level < element.gtu) {
-                            innerHTML += `
-                            <div>
-                                <button class="btn btn-danger element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="productiontime" data-upgrade-cost=${production_time_upgrade_cost}>
-                                    Buy ${Math.floor(production_time_decrease*100)/100} sec / cycle
-                                </button> Cost: ${production_time_upgrade_cost}
-                            </div>`;
-                        }
+                        <div>
+                            <button class="btn btn-danger element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="productiontime" data-upgrade-cost=${production_time_upgrade_cost}>
+                                Buy ${Math.floor(production_time_decrease*100)/100} sec / cycle
+                            </button> Cost: ${production_time_upgrade_cost}
+                        </div>`;
+                    }
+                }
+
+                if (typeof element.gi != "undefined") { // check if element produces
+                    level = 0
+                    if (typeof element.gil != "undefined") { // check if level is 0
+                        level = element.gil
+                    } else {
+                        element.gil = 0;
                     }
 
-                    if (typeof element.gi != "undefined") { // check if element produces
-                        level = 0
-                        if (typeof element.gil != "undefined") { // check if level is 0
-                            level = element.gil
-                        } else {
-                            element.gil = 0;
-                        }
+                    percent_filled = (level / element.giu) * 100
 
-                        percent_filled = (level / element.giu) * 100
+                    production_electric = element.gi * level
+                    production_electric_upgrade_cost = element.p * (level + 1) * 2
 
-                        production_electric = element.gi * level
-                        production_electric_upgrade_cost = element.p * (level + 1) * 2
-
+                    innerHTML += `
+                        <div>${Math.floor(production_electric * 100) / 100} ⛀ / cycle / cycle</div>
+                        <div class="progress " role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.giu}">
+                            <div class="progress-bar text-bg-warning bg-warning overflow-visible text-dark" style="width: ${percent_filled}%">
+                                Level: ${level + "/" + element.giu}
+                            </div>
+                        </div>`;
+                    if (level < element.giu) {
                         innerHTML += `
-                            <div>${Math.floor(production_electric * 100) / 100} ⛀ / cycle / cycle</div>
-                            <div class="progress " role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.giu}">
-                                <div class="progress-bar text-bg-warning bg-warning overflow-visible text-dark" style="width: ${percent_filled}%">
-                                    Level: ${level + "/" + element.giu}
-                                </div>
-                            </div>`;
-                        if (level < element.giu) {
-                            innerHTML += `
-                            <div>
-                                <button class="btn btn-warning element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="productionelectric" data-upgrade-cost=${production_time_upgrade_cost}>
-                                    Buy ${element.gi} ⛀ / cycle / cycle
-                                </button> Cost: ${production_electric_upgrade_cost}
-                            </div>`;
-                        }
+                        <div>
+                            <button class="btn btn-warning element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="productionelectric" data-upgrade-cost=${production_time_upgrade_cost}>
+                                Buy ${element.gi} ⛀ / cycle / cycle
+                            </button> Cost: ${production_electric_upgrade_cost}
+                        </div>`;
+                    }
+                }
+
+                if (typeof element.go != "undefined") { // check if element produces
+                    level = 0
+                    if (typeof element.gol != "undefined") { // check if level is 0
+                        level = element.gol
+                    } else {
+                        element.gol = 0;
                     }
 
-                    if (typeof element.go != "undefined") { // check if element produces
-                        level = 0
-                        if (typeof element.gol != "undefined") { // check if level is 0
-                            level = element.gol
-                        } else {
-                            element.gol = 0;
-                        }
+                    percent_filled = (level / element.gou) * 100
 
-                        percent_filled = (level / element.gou) * 100
+                    production_offline = element.go * level
+                    production_offline_upgrade_cost = element.p * (level + 1) * 1.5
 
-                        production_offline = element.go * level
-                        production_offline_upgrade_cost = element.p * (level + 1) * 1.5
-
+                    innerHTML += `
+                        <div>${Math.floor(production_offline * 100) / 100} ⛀ / cycle (offline)</div>
+                        <div class="progress " role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.gou}">
+                            <div class="progress-bar text-bg-info bg-info overflow-visible text-dark" style="width: ${percent_filled}%">
+                                Level: ${level + "/" + element.gou}
+                            </div>
+                        </div>`;
+                    if (level < element.gou) {
                         innerHTML += `
-                            <div>${Math.floor(production_offline * 100) / 100} ⛀ / cycle (offline)</div>
-                            <div class="progress " role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.gou}">
-                                <div class="progress-bar text-bg-info bg-info overflow-visible text-dark" style="width: ${percent_filled}%">
-                                    Level: ${level + "/" + element.gou}
-                                </div>
-                            </div>`;
-                        if (level < element.gou) {
-                            innerHTML += `
-                            <div>
-                                <button class="btn btn-info element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="productionoffline" data-upgrade-cost=${production_offline_upgrade_cost}>
-                                    Buy ${element.go} ⛀ / cycle (offline)
-                                </button> Cost: ${production_offline_upgrade_cost}
-                            </div>`;
-                        }
+                        <div>
+                            <button class="btn btn-info element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="productionoffline" data-upgrade-cost=${production_offline_upgrade_cost}>
+                                Buy ${element.go} ⛀ / cycle (offline)
+                            </button> Cost: ${production_offline_upgrade_cost}
+                        </div>`;
+                    }
+                }
+
+                if (typeof element.gc != "undefined") { // check if element produces
+                    level = 0
+                    if (typeof element.gcl != "undefined") { // check if level is 0
+                        level = element.gcl
+                    } else {
+                        element.gcl = 0;
                     }
 
-                    if (typeof element.gc != "undefined") { // check if element produces
-                        level = 0
-                        if (typeof element.gcl != "undefined") { // check if level is 0
-                            level = element.gcl
-                        } else {
-                            element.gcl = 0;
-                        }
+                    percent_filled = (level / element.gcu) * 100
 
-                        percent_filled = (level / element.gcu) * 100
+                    production_click = element.gc * level
+                    production_click_upgrade_cost = element.p * (level + 1) * 2
 
-                        production_click = element.gc * level
-                        production_click_upgrade_cost = element.p * (level + 1) * 2
-
+                    innerHTML += `
+                        <div>${Math.floor(production_click * 100) / 100} ⛀ / click</div>
+                        <div class="progress " role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.gcu}">
+                            <div class="progress-bar text-bg-secondary bg-secondary overflow-visible text-dark" style="width: ${percent_filled}%">
+                                Level: ${level + "/" + element.gcu}
+                            </div>
+                        </div>`;
+                    if (level < element.gcu) {
                         innerHTML += `
-                            <div>${Math.floor(production_click * 100) / 100} ⛀ / click</div>
-                            <div class="progress " role="progressbar" aria-label="Warning example" aria-valuenow="${level}" aria-valuemin="0" aria-valuemax="${element.gcu}">
-                                <div class="progress-bar text-bg-secondary bg-secondary overflow-visible text-dark" style="width: ${percent_filled}%">
-                                    Level: ${level + "/" + element.gcu}
-                                </div>
-                            </div>`;
-                        if (level < element.gcu) {
-                            innerHTML += `
-                            <div>
-                                <button class="btn btn-secondary element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="clickvalue" data-upgrade-cost=${production_click_upgrade_cost}>
-                                    Buy ${element.gc} ⛀ / click
-                                </button> Cost: ${production_click_upgrade_cost}
-                            </div>`;
-                        }
+                        <div>
+                            <button class="btn btn-secondary element-upgrade-btn btn-sm w-50" style="font-size: 12px;" type="button" data-element-id="${key}" data-upgrade-type="clickvalue" data-upgrade-cost=${production_click_upgrade_cost}>
+                                Buy ${element.gc} ⛀ / click
+                            </button> Cost: ${production_click_upgrade_cost}
+                        </div>`;
                     }
-
                 }
 
                 const isActive = selected_accordion == key ? "show" : "";
@@ -242,7 +233,7 @@
                 elementDiv.className = "element-box accordion-item";
                 elementDiv.innerHTML = `
                     <h2 class="accordion-header">
-                        <button class="accordion-button ${isCollapsed}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${element.n}" aria-expanded="false" aria-controls="collapse-${element.n}">
+                        <button class="accordion-button ${isCollapsed}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${element.n.replace(/\s/g, "")}" aria-expanded="false" aria-controls="collapse-${element.n.replace(/\s/g, "") }">
                             <strong class="element-box-ln1">${element.n} 
                                 <span class="badge badge-tier">T${element.t}</span>
                             </strong>
@@ -252,7 +243,7 @@
                             </div>
                         </button>
                     </h2>
-                    <div id="collapse-${element.n}" class="accordion-collapse collapse ${isActive}" data-bs-parent="#element_list">
+                    <div id="collapse-${element.n.replace(/\s/g, "") }" class="accordion-collapse collapse ${isActive}" data-bs-parent="#element_list">
                         <div class="accordion-body">
                             <div class="d-grid gap-2 mx-auto">
                                 ${innerHTML}
@@ -352,20 +343,44 @@
         }
     }
 
+    function addElementToElementList(element, id) {
+        // add check if element is novel
+        data["elements"][id] = element;
+        renderElements(data["elements"])
+        console.log(data["elements"])
+    }
+
+
     async function performMerge(element1, element2) {
         console.log(element1, element2)
-        try {
-            let response = await fetch('api/merge');
-            if (!response.ok) {
-                throw new Error('Network response was not ok ' + response.statusText);
-            }
-            let data = await response.json();
-            console.log(data);
-        } catch (error) {
-            console.error('There was a problem with your fetch operation:', error);
+        const url = `/api/merge?element1=${encodeURIComponent(element1["n"])}&element2=${encodeURIComponent(element2["n"])}`;
+
+        let response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
         }
+        let data = await response.json();
+        console.log(data);
+
+        let new_element = { 
+            "n": data.name, // Name
+            "e": data.emoji, // Emoji
+            "t": data.tier, // Tier
+            "r": [[element1["n"], element2["n"]]], // Recipe
+            "p": (element1["p"] + element2["p"]) * data.tier,
+            "g": (element1["g"] + element2["g"]) / 2 * data.tier, // Generate pr cycle
+            "gt": (element1["gt"] + element2["gt"]) / 2, // Generate time in seconds
+            "gu": Math.floor((element1["gu"] + element2["gu"]) / 2 + 1), // Generate pr cycle upgrade count (max level)
+            "gtu": Math.floor((element1["gtu"] + element2["gtu"]) / 2 + 1), // Generate time in seconds upgrade count (max level)
+        };
+           
+
+        addElementToElementList(new_element,data._id)
+
 
     }
+
+
     function loadInfiniteIdleData() {
         return {}
 
@@ -396,9 +411,10 @@
 
     data = loadInfiniteIdleData();
 
+    // IDEA: make merged element have bonus based on total amount of primitive elements are used
     if (typeof data["elements"] === "undefined" || data == {} ) {
         data["elements"] = {};
-        data["elements"][1] = { // if merge contains fire, decrease base production time by 25%
+        data["elements"][1] = {
             "n": "Fire", // Name
             "e": "🔥", // Emoji
             "t": 1, // Tier
@@ -584,7 +600,7 @@
 
                     if (xdist < 8 && ydist < 5) {
 
-                        await performMerge(data["field"][dataKey]["element"]["n"], data["field"][key]["element"]["n"])
+                        await performMerge(data["field"][dataKey]["element"], data["field"][key]["element"])
 
                         data["field"].splice(Math.max(dataKey, key), 1);
                         data["field"].splice(Math.min(dataKey, key), 1);
