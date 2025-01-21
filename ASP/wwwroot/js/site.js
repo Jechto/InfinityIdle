@@ -352,6 +352,20 @@
         }
     }
 
+    async function performMerge(element1, element2) {
+        console.log(element1, element2)
+        try {
+            let response = await fetch('api/merge');
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            let data = await response.json();
+            console.log(data);
+        } catch (error) {
+            console.error('There was a problem with your fetch operation:', error);
+        }
+
+    }
     function loadInfiniteIdleData() {
         return {}
 
@@ -436,8 +450,8 @@
             "t": 1,
             "r": [[]],
             "p": 300,
-            "g": 25,
-            "gt": 2,
+            "g": 5,
+            "gt": 7.5,
             "go": 25, // Generate pr cycle offline untop of normal
             "gu": 2,
             "gtu": 2,
@@ -495,10 +509,12 @@
             }
 
             if (data["field"][key]["selected"]) {
-                data["field"][key]["position"]["x"] = mousepos.x - 10
-                data["field"][key]["position"]["y"] = mousepos.y - 5
+                const rect = playfield.getBoundingClientRect();
 
-                if (data["field"][key]["position"]["x"] >= 90) { // delete element if outside of playfield
+                data["field"][key]["position"]["x"] = mousepos.x - (100 / rect.width * 100)
+                data["field"][key]["position"]["y"] = mousepos.y - (50 / rect.width * 100)
+
+                if (data["field"][key]["position"]["x"] >= 89) { // delete element if outside of playfield
                     data["field"].splice(key, 1); // Remove element by key
                     fullrenderField(data["field"]);
                     return;
@@ -517,26 +533,6 @@
     setInterval(mainClock, 1000/60);
     setInterval(renderClock, 1000/60);
     setInterval(saveInfiniteIdleData, 1000);
-
-
-    playfield.addEventListener("click", function (event) {
-        console.log("Playfield clicked!");
-        data["resources"]["money"] += 10;
-        for (const key in data["field"]) {
-            if (typeof data["field"][key]["element"]["gc"] != "undefined") {
-                data["resources"]["money"] += data["field"][key]["element"]["gcl"] * data["field"][key]["element"]["gc"];
-            }
-        }
-
-        const fieldElement = event.target.closest(".field_element");
-        if (fieldElement) {
-            const dataKey = fieldElement.getAttribute("data-key");
-            console.log("Field element clicked:", dataKey);
-            data["field"][dataKey]["selected"] = !data["field"][dataKey]["selected"]
-            console.log("Selected:", data["field"][dataKey]["selected"])
-        }
-
-    });
 
     playfield.addEventListener('mousemove', function (event) {
         const rect = playfield.getBoundingClientRect();
@@ -561,5 +557,46 @@
             mousepos.y = 100;
         }
     });
+
+    playfield.addEventListener("mousedown", async function (event) {
+        console.log("Playfield clicked!");
+        data["resources"]["money"] += 10;
+        for (const key in data["field"]) {
+            if (typeof data["field"][key]["element"]["gc"] != "undefined") {
+                data["resources"]["money"] += data["field"][key]["element"]["gcl"] * data["field"][key]["element"]["gc"];
+            }
+        }
+
+        const fieldElement = event.target.closest(".field_element");
+        if (fieldElement) {
+            const dataKey = fieldElement.getAttribute("data-key");
+            data["field"][dataKey]["selected"] = !data["field"][dataKey]["selected"]
+
+            if (!data["field"][dataKey]["selected"]) {
+                console.log("Place")
+                // Check all items on field if they below the placed object
+                for (const key in data["field"]) {
+                    if (key == dataKey)
+                        continue // skip itself
+
+                    xdist = Math.abs(data["field"][dataKey]["position"]["x"] - data["field"][key]["position"]["x"])
+                    ydist = Math.abs(data["field"][dataKey]["position"]["y"] - data["field"][key]["position"]["y"])
+
+                    if (xdist < 8 && ydist < 5) {
+
+                        await performMerge(data["field"][dataKey]["element"]["n"], data["field"][key]["element"]["n"])
+
+                        data["field"].splice(Math.max(dataKey, key), 1);
+                        data["field"].splice(Math.min(dataKey, key), 1);
+                        fullrenderField(data["field"]);
+                        return;
+                    }
+                }
+            }
+
+        }
+    });
+
+
 
 });
