@@ -113,19 +113,16 @@ namespace ASP.Controllers
                 // Check if the element already exists in the database, if not, add it
                 var amount_found = DatabaseHelper.GetElementCount(connectionString, ai_response).Length;
 
-                int new_tier = 0;
+                //fetch tier of elements and increment by 1
+                int tier_element_1 = DatabaseHelper.GetElementTierById(connectionString, element_ids[0]);
+                int tier_element_2 = DatabaseHelper.GetElementTierById(connectionString, element_ids[1]);
+
+                int new_tier = Math.Max(tier_element_1, tier_element_2) + 1;
+
                 int new_element_id = 0;
                 if (amount_found == 0)
                 {
-                    //fetch tier of elements and increment by 1
-                    int tier_element_1 = DatabaseHelper.GetElementTierById(connectionString, element_ids[0]);
-                    int tier_element_2 = DatabaseHelper.GetElementTierById(connectionString, element_ids[1]);
-
-                    new_tier = Math.Max(tier_element_1, tier_element_2) + 1;
-
                     DatabaseHelper.CreateNewElement(connectionString, ai_response, ai_response_emoji, new_tier);
-                } else {
-                    new_tier = DatabaseHelper.GetElementTierById(connectionString, new_element_id);
                 }
 
                 new_element_id = DatabaseHelper.GetElementId(connectionString, ai_response);

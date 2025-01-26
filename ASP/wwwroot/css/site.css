@@ -86,8 +86,7 @@ body {
 
 .field_element {
     box-shadow: 0.25rem 0 .75rem rgba(0, 0, 0, .5);
-    width: 200px;
-    height: 100px;
+    width: 250px;
     border-radius: 5px;
     border-color: #ff6a00;
     border-width: 2px;
@@ -119,9 +118,19 @@ body {
     width: 45%;
 }
 
-.field_selected {
-    z-index: 20;
+.misc-prod-info {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 12px;
 }
+
+.misc-prod-bonus {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 12px;
+}
+
+    .field_selected {
+        z-index: 20;
+    }
 
 
 #playfield {

@@ -5,9 +5,6 @@
     const playfield = document.getElementById("playfield");
     var mousepos = {x: 0, y: 0}
 
-    function idToElementName(id) {
-        return data["elements"][id]["n"]
-    }
 
     function idToElementObject(id) {
         return data["elements"][id]
@@ -279,8 +276,27 @@
         for (const key in fieldArray) {
             percent_filled = fieldArray[key]["production_progress"] / (fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"])) * 100
 
+            fieldBadges = ""
+            if (typeof fieldArray[key]["element"]["b"]["f"] != "undefined") {
+                fieldBadges += `<span class="badge rounded-pill bg-danger">${fieldArray[key]["element"]["b"]["f"]}</span>`
+            }
+            if (typeof fieldArray[key]["element"]["b"]["w"] != "undefined") {
+                fieldBadges += `<span class="badge rounded-pill bg-primary">${fieldArray[key]["element"]["b"]["w"]}</span>`
+            }
+            if (typeof fieldArray[key]["element"]["b"]["p"] != "undefined") {
+                fieldBadges += `<span class="badge rounded-pill bg-success">${fieldArray[key]["element"]["b"]["p"]}</span>`
+            }
+            if (typeof fieldArray[key]["element"]["b"]["e"] != "undefined") {
+                fieldBadges += `<span class="badge rounded-pill bg-warning">${fieldArray[key]["element"]["b"]["e"]}</span>`
+            }
+            if (typeof fieldArray[key]["element"]["b"]["i"] != "undefined") {
+                fieldBadges += `<span class="badge rounded-pill bg-info">${fieldArray[key]["element"]["b"]["i"]}</span>`
+            }
+            if (typeof fieldArray[key]["element"]["b"]["a"] != "undefined") {
+                fieldBadges += `<span class="badge rounded-pill bg-secondary">${fieldArray[key]["element"]["b"]["a"]}</span>`
+            }
 
-            //console.log(fieldArray[key]["electric_bonus"])
+
 
             innerHTML += `
             <div class="field_element" style="left: ${fieldArray[key]["position"]["x"]}%;top: ${fieldArray[key]["position"]["y"]}%" data-key="${key}">
@@ -291,6 +307,11 @@
                 <div>
                     <span class="progress-bar-timer"></span>
                     <span class="progress-bar-production"></span>
+                </div>
+                <div class="misc-prod-info"></div>
+                <div class="misc-prod-bonus"></div>
+                <div>
+                    ${fieldBadges}
                 </div>
 
             </div>`;
@@ -318,11 +339,15 @@
                 const progressBar = fieldElement.querySelector(".progress-bar");
                 const progressBarTimer = fieldElement.querySelector(".progress-bar-timer");
                 const progressBarProduction = fieldElement.querySelector(".progress-bar-production");
+                const miscprodinfo = fieldElement.querySelector(".misc-prod-info");
+                const miscprodbonus = fieldElement.querySelector(".misc-prod-bonus");
 
                 progressBar.style.transition = 'width 0.1s linear';
                 progressBar.style.width = `${percentFilled}%`;
                 progressBarTimer.textContent = `${Math.round((fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"]) - fieldArray[key]["production_progress"]) * 10) / 10}s`;
                 progressBarProduction.textContent = `${Math.round(production * 100) / 100} ${currency}`;
+                miscprodinfo.textContent = `Production: ${Math.round(production / (fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"])) * 10) / 10 + currency} / Sec`;
+                miscprodbonus.textContent = `Bonus From merged elements ${0 + currency}`
             }
         }
     }
@@ -344,12 +369,39 @@
     }
 
     function addElementToElementList(element, id) {
-        // add check if element is novel
-        data["elements"][id] = element;
+        if (typeof data["elements"][id] != "undefined") {
+            const existingElement = data["elements"][id];
+            existingElement.n = element.n;
+            existingElement.e = element.e;
+            existingElement.t = Math.max(existingElement.t, element.t);
+            existingElement.p = Math.max(existingElement.p, element.p);
+            existingElement.g = Math.max(existingElement.g, element.g);
+            existingElement.gt = Math.min(existingElement.gt, element.gt);
+            existingElement.gu = Math.max(existingElement.gu, element.gu);
+            existingElement.gtu = Math.max(existingElement.gtu, element.gtu);
+            if (element.gi) existingElement.gi = Math.max(existingElement.gi || 0, element.gi);
+            if (element.giu) existingElement.giu = Math.max(existingElement.giu || 0, element.giu);
+            if (element.go) existingElement.go = Math.max(existingElement.go || 0, element.go);
+            if (element.gou) existingElement.gou = Math.max(existingElement.gou || 0, element.gou);
+            if (element.gc) existingElement.gc = Math.max(existingElement.gc || 0, element.gc);
+            if (element.gcu) existingElement.gcu = Math.max(existingElement.gcu || 0, element.gcu);
+            existingElement.r.push(element.r[0])
+        } else {
+            data["elements"][id] = element;
+        }
+
+        for (const key in element.b) {
+            if (data["elements"][id].b.hasOwnProperty(key)) {
+                data["elements"][id].b[key] = Math.max(data["elements"][id].b[key], element.b[key]);
+            } else {
+                data["elements"][id].b[key] = element.b[key];
+            }
+        }
+
+
         renderElements(data["elements"])
         console.log(data["elements"])
     }
-
 
     async function performMerge(element1, element2) {
         console.log(element1, element2)
@@ -361,6 +413,22 @@
         }
         let data = await response.json();
         console.log(data);
+        let total_base_elements = {}
+        for (const key in element1["b"]) {
+            if (typeof total_base_elements[key] == "undefined") {
+                total_base_elements[key] = element1["b"][key]
+            } else {
+                total_base_elements[key] += element1["b"][key]
+            }
+        }
+        for (const key in element2["b"]) {
+            if (typeof total_base_elements[key] == "undefined") {
+                total_base_elements[key] = element2["b"][key]
+            } else {
+                total_base_elements[key] += element1["b"][key]
+            }
+        }
+
 
         let new_element = { 
             "n": data.name, // Name
@@ -370,16 +438,41 @@
             "p": (element1["p"] + element2["p"]) * data.tier,
             "g": (element1["g"] + element2["g"]) / 2 * data.tier, // Generate pr cycle
             "gt": (element1["gt"] + element2["gt"]) / 2, // Generate time in seconds
-            "gu": Math.floor((element1["gu"] + element2["gu"]) / 2 + 1), // Generate pr cycle upgrade count (max level)
-            "gtu": Math.floor((element1["gtu"] + element2["gtu"]) / 2 + 1), // Generate time in seconds upgrade count (max level)
+            "gu": Math.round((element1["gu"] + element2["gu"]) / 2 + 1), // Generate pr cycle upgrade count (max level)
+            "gtu": Math.round((element1["gtu"] + element2["gtu"]) / 2 + 1), // Generate time in seconds upgrade count (max level)
+            "b": total_base_elements,
         };
+
+        if (element1.gi || element2.gi) {
+            new_element.gi = (element1.gi || 0) + (element2.gi || 0);
+            if (element1.giu && element2.giu) {
+                new_element.giu = Math.round((element1.giu + element2.giu) / 2 + 1);
+            } else {
+                new_element.giu = Math.max((element1.giu + 1) || 0, (element2.giu + 1) || 0);
+            }
+        }
+        if (element1.go || element2.go) {
+            new_element.go = (element1.go || 0) + (element2.go || 0);
+            if (element1.gou && element2.gou) {
+                new_element.gou = Math.round((element1.gou + element2.gou) / 2 + 1);
+            } else {
+                new_element.gou = Math.max((element1.gou + 1) || 0, (element2.gou + 1) || 0);
+            }
+        }
+        if (element1.gc || element2.gc) {
+            new_element.gc = (element1.gc || 0) + (element2.gc || 0);
+            if (element1.gcu && element2.gcu) {
+                new_element.gcu = Math.round((element1.gcu + element2.gcu) / 2 + 1);
+            } else {
+                new_element.gcu = Math.max((element1.gcu + 1) || 0, (element2.gcu + 1) || 0);
+            }
+        }
            
 
         addElementToElementList(new_element,data._id)
 
 
     }
-
 
     function loadInfiniteIdleData() {
         return {}
@@ -424,6 +517,7 @@
             "gt": 1, // Generate time in seconds
             "gu": 1, // Generate pr cycle upgrade count (max level)
             "gtu": 3, // Generate time in seconds upgrade count (max level)
+            "b": {"f": 1}, // amount of basic elements used to craft it  
         };
         data["elements"][2] = {
             "n": "Water",
@@ -435,6 +529,7 @@
             "gt": 7.5,
             "gu": 3,
             "gtu": 1,
+            "b": { "w": 1 }, 
         };
         data["elements"][3] = {
             "n": "Plant",
@@ -446,6 +541,7 @@
             "gt": 5,
             "gu": 4,
             "gtu": 4,
+            "b": { "p": 1 }, 
         };
         data["elements"][4] = {
             "n": "Electricity",
@@ -459,6 +555,7 @@
             "gu": 2, 
             "gtu": 2,
             "giu": 4, // Increase production pr cycle upgrade count (max level)
+            "b": { "e": 1 }, 
         };
         data["elements"][5] = {
             "n": "Ice",
@@ -472,7 +569,7 @@
             "gu": 2,
             "gtu": 2,
             "gou": 3, // Generate pr cycle offline untop of normal upgrade count (max level)
-
+            "b": { "i": 1 }, 
         };
         data["elements"][6] = {
             "n": "Air",
@@ -486,12 +583,13 @@
             "gu": 2,
             "gtu": 2,
             "gcu": 3, // Generate pr click upgrade count (max level)
+            "b": { "a": 1 }, 
         };
     }
 
     if (typeof data["resources"] === "undefined") {
         data["resources"] = {};
-        data["resources"]["money"] = 100000
+        data["resources"]["money"] = 100000000
         data["resources"]["money_per_second"] = 0
     }
 
@@ -601,11 +699,11 @@
                     if (xdist < 8 && ydist < 5) {
 
                         await performMerge(data["field"][dataKey]["element"], data["field"][key]["element"])
-
                         data["field"].splice(Math.max(dataKey, key), 1);
                         data["field"].splice(Math.min(dataKey, key), 1);
                         fullrenderField(data["field"]);
                         return;
+
                     }
                 }
             }
