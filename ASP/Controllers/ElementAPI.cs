@@ -125,8 +125,16 @@ namespace ASP.Controllers
                     DatabaseHelper.CreateNewElement(connectionString, ai_response, ai_response_emoji, new_tier);
                 }
 
+
                 new_element_id = DatabaseHelper.GetElementId(connectionString, ai_response);
                 DatabaseHelper.CreateNewRecipe(connectionString, element_ids[0], element_ids[1], new_element_id);
+
+                int db_tier = DatabaseHelper.GetElementTierById(connectionString, new_element_id);
+                if (db_tier != 0)
+                {
+                    new_tier = db_tier;
+                }
+
 
                 Dictionary<string, string> response = new Dictionary<string, string>();
                 response["name"] = ai_response;

@@ -308,11 +308,7 @@
                     <span class="progress-bar-timer"></span>
                     <span class="progress-bar-production"></span>
                 </div>
-                <div class="misc-prod-info"></div>
-                <div class="misc-prod-bonus"></div>
-                <div>
-                    ${fieldBadges}
-                </div>
+                <div>${fieldBadges}</div>
 
             </div>`;
         }
@@ -346,8 +342,6 @@
                 progressBar.style.width = `${percentFilled}%`;
                 progressBarTimer.textContent = `${Math.round((fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"]) - fieldArray[key]["production_progress"]) * 10) / 10}s`;
                 progressBarProduction.textContent = `${Math.round(production * 100) / 100} ${currency}`;
-                miscprodinfo.textContent = `Production: ${Math.round(production / (fieldArray[key]["element"]["gt"] * Math.pow(0.9, fieldArray[key]["element"]["gtl"])) * 10) / 10 + currency} / Sec`;
-                miscprodbonus.textContent = `Bonus From merged elements ${0 + currency}`
             }
         }
     }
@@ -413,6 +407,11 @@
         }
         let data = await response.json();
         console.log(data);
+
+        if (data.tier <= element1.t || data.tier <= element2.t) {
+            return 
+        }
+
         let total_base_elements = {}
         for (const key in element1["b"]) {
             if (typeof total_base_elements[key] == "undefined") {
@@ -444,7 +443,7 @@
         };
 
         if (element1.gi || element2.gi) {
-            new_element.gi = (element1.gi || 0) + (element2.gi || 0);
+            new_element.gi = ((element1.gi || 0) + (element2.gi || 0)) * data.tier;
             if (element1.giu && element2.giu) {
                 new_element.giu = Math.round((element1.giu + element2.giu) / 2 + 1);
             } else {
@@ -452,7 +451,7 @@
             }
         }
         if (element1.go || element2.go) {
-            new_element.go = (element1.go || 0) + (element2.go || 0);
+            new_element.go = ((element1.go || 0) + (element2.go || 0)) * data.tier;
             if (element1.gou && element2.gou) {
                 new_element.gou = Math.round((element1.gou + element2.gou) / 2 + 1);
             } else {
@@ -460,7 +459,7 @@
             }
         }
         if (element1.gc || element2.gc) {
-            new_element.gc = (element1.gc || 0) + (element2.gc || 0);
+            new_element.gc = ((element1.gc || 0) + (element2.gc || 0)) * data.tier;
             if (element1.gcu && element2.gcu) {
                 new_element.gcu = Math.round((element1.gcu + element2.gcu) / 2 + 1);
             } else {
@@ -637,11 +636,14 @@
 
         }
     }
-
     function renderClock() {
         updateFieldElementPositions(data["field"])
         renderField(data["field"])
         setCurrentMoneyOnUi(data["resources"]["money"], data["resources"]["money_per_second"])
+    }
+
+    function giveMoneyForBgItems() { // TODO: implement generating money from background elements
+
     }
 
     setInterval(mainClock, 1000/60);

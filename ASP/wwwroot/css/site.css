@@ -118,19 +118,19 @@ body {
     width: 45%;
 }
 
-.misc-prod-info {
+.bonus-desc {
     font-family: "Courier New", Courier, monospace;
-    font-size: 12px;
+    font-size: 15px
 }
 
-.misc-prod-bonus {
+.bonus-production {
     font-family: "Courier New", Courier, monospace;
-    font-size: 12px;
+    font-size: 15px
 }
 
-    .field_selected {
-        z-index: 20;
-    }
+.field_selected {
+    z-index: 20;
+}
 
 
 #playfield {
