@@ -4,7 +4,9 @@
     const currency = "⛀"
     const playfield = document.getElementById("playfield");
     var mousepos = {x: 0, y: 0}
-
+    var bonus_offield_click = 0
+    var built_up_electric_bonus = 0 
+    var offield_total_production = 0
 
     function idToElementObject(id) {
         return data["elements"][id]
@@ -12,7 +14,7 @@
 
 
     function setCurrentMoneyOnUi(money, mps) {
-        document.getElementById("money-count").innerHTML = Math.round(money) + currency + "<div>" + mps + currency + " per Second</div>";
+        document.getElementById("money-count").innerHTML = Math.round(money) + currency + "<div>" + mps + currency + " per Second passively</div>";
     }
 
 
@@ -588,8 +590,7 @@
 
     if (typeof data["resources"] === "undefined") {
         data["resources"] = {};
-        data["resources"]["money"] = 100000000
-        data["resources"]["money_per_second"] = 0
+        data["resources"]["money"] = 0
     }
 
     if (typeof data["field"] === "undefined") {
@@ -604,7 +605,6 @@
     fullrenderField(data["field"]);
 
     function mainClock() { // 30 ticks per second
-        data["resources"]["money"] += data["resources"]["money_per_second"];
         for (const key in data["field"]) {
             data["field"][key]["production_progress"] += 1/60;
 
@@ -639,16 +639,48 @@
     function renderClock() {
         updateFieldElementPositions(data["field"])
         renderField(data["field"])
-        setCurrentMoneyOnUi(data["resources"]["money"], data["resources"]["money_per_second"])
+        setCurrentMoneyOnUi(data["resources"]["money"], Math.floor(offield_total_production* 100) / 100)
     }
 
     function giveMoneyForBgItems() { // TODO: implement generating money from background elements
+        passive_per_second = 0
+        increase_per_second = 0
+        passive_offline_per_second = 0
+        click_value = 0
+
+        for (const key in data["elements"]) {
+            element = data["elements"][key]
+
+            if (typeof element.gl != "undefined" && element.gl >= 1) {
+                if (typeof element.gtl != "undefined" && element.gtl >= 1) 
+                    passive_per_second += element.g * element.gl / element.gt * Math.pow(0.9, element.gtl)
+            }
+            if (typeof element.gil != "undefined" && element.gil >= 1) {
+                if (typeof element.gtl != "undefined" && element.gtl >= 1) 
+                    increase_per_second += element.gi * element.gil / (element.gt * Math.pow(0.9, element.gtl)) / 100
+            }
+            if (typeof element.gcl != "undefined" && element.gcl >= 1) {
+                click_value += element.gc * element.gcl
+            }
+            if (typeof element.gol != "undefined" && element.gol >= 1) {
+                if (typeof element.gtl != "undefined" && element.gtl >= 1)
+                    passive_offline_per_second += element.go * element.gol / element.gt * Math.pow(0.9, element.gtl)
+            }
+        }
+        console.log(passive_per_second, increase_per_second, passive_offline_per_second, click_value, built_up_electric_bonus)
+
+        bonus_offield_click = click_value
+        built_up_electric_bonus += increase_per_second
+        offield_total_production = passive_per_second / 100 + passive_offline_per_second / 100 + built_up_electric_bonus / 100
+
+        data["resources"]["money"] += offield_total_production
 
     }
 
     setInterval(mainClock, 1000/60);
     setInterval(renderClock, 1000/60);
     setInterval(saveInfiniteIdleData, 1000);
+    setInterval(giveMoneyForBgItems, 1000/10)
 
     playfield.addEventListener('mousemove', function (event) {
         const rect = playfield.getBoundingClientRect();
@@ -677,6 +709,8 @@
     playfield.addEventListener("mousedown", async function (event) {
         console.log("Playfield clicked!");
         data["resources"]["money"] += 10;
+        data["resources"]["money"] += bonus_offield_click;
+
         for (const key in data["field"]) {
             if (typeof data["field"][key]["element"]["gc"] != "undefined") {
                 data["resources"]["money"] += data["field"][key]["element"]["gcl"] * data["field"][key]["element"]["gc"];
